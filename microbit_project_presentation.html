@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBC micro:bit Projektų Metodinis Aprašas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .project-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .info-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-card .icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+
+        .timeline {
+            margin: 40px 0;
+        }
+
+        .timeline h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4a5568;
+            font-size: 2rem;
+        }
+
+        .timeline-container {
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .timeline-content {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            width: 45%;
+            position: relative;
+            border-left: 4px solid #4299e1;
+        }
+
+        .timeline-item:nth-child(even) .timeline-content {
+            border-left: none;
+            border-right: 4px solid #4299e1;
+        }
+
+        .timeline-week {
+            background: #4299e1;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .projects-section {
+            margin-top: 50px;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border-color: #4299e1;
+        }
+
+        .project-header {
+            background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
+            color: white;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            transform: rotate(45deg);
+        }
+
+        .project-header h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .project-authors {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .project-body {
+            padding: 25px;
+        }
+
+        .project-description {
+            margin-bottom: 20px;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+
+        .code-section {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .code-section pre {
+            margin: 0;
+        }
+
+        .reflection {
+            background: #f0fff4;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #48bb78;
+        }
+
+        .reflection h4 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .reflection-item {
+            margin-bottom: 10px;
+            font-style: italic;
+            color: #4a5568;
+        }
+
+        .reflection-item strong {
+            color: #2d3748;
+            font-style: normal;
+        }
+
+        .stats-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .toggle-button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-button:hover {
+            background: #3182ce;
+        }
+
+        .code-hidden {
+            display: none;
+        }
+
+        .evaluation-section {
+            background: #f7fafc;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 40px;
+        }
+
+        .evaluation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .evaluation-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #4299e1;
+        }
+
+        .evaluation-item h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .evaluation-percentage {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4299e1;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .timeline-item {
+                flex-direction: column !important;
+            }
+            
+            .timeline-content {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header animate-fade-in">
+            <h1>🤖 Kūrybiniai informatikos projektai</h1>
+            <p class="subtitle">Su BBC micro:bit mikrovaldikliais</p>
+        </header>
+
+        <div class="main-content animate-fade-in">
+            <div class="project-info">
+                <div class="info-card">
+                    <h3><span class="icon">⏱️</span>Trukmė</h3>
+                    <p>4 savaitės (12 akademinių valandų)</p>
+                </div>
+                <div class="info-card">
+                    <h3><span class="icon">👥</span>Tikslinė grupė</h3>
+                    <p>4-6 klasių mokiniai</p>
+                </div>
+                <div class="info-card">
+                    <h3><span class="icon">🎯</span>Tikslas</h3>
+                    <p>Supažindinti su fizinio programavimo pagrindais ir algoritminiu mąstymu</p>
+                </div>
+            </div>
+
+            <div class="timeline">
+                <h2>📅 Projekto eiga</h2>
+                <div class="timeline-container">
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <div class="timeline-week">1 savaitė</div>
+                            <h3>Įvadas į micro:bit</h3>
+                            <p>Komponentų pristatymas, MakeCode aplinka, LED matricos valdymas, piktogramų kūrimas</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <div class="timeline-week">2 savaitė</div>
+                            <h3>Jutikliai ir duomenys</h3>
+                            <p>Akselerometras, šviesos jutiklis, duomenų rinkimas ir analizė</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <div class="timeline-week">3 savaitė</div>
+                            <h3>Projekto kūrimas</h3>
+                            <p>Idėjų generavimas, komandų formavimas, programavimas</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <div class="timeline-week">4 savaitė</div>
+                            <h3>Užbaigimas ir pristatymas</h3>
+                            <p>Testavimas, tobulinimas, demonstravimas, refleksija</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="projects-section">
+                <h2 style="text-align: center; margin-bottom: 30px; color: #4a5568; font-size: 2rem;">🏆 Mokinių projektų pavyzdžiai</h2>
+                
+                <div class="projects-grid">
+                    <div class="project-card">
+                        <div class="project-header">
+                            <h3>💡 Nuotaikų šviesoforas</h3>
+                            <p class="project-authors">Ieva, Lukas ir Matas, 4 klasė</p>
+                        </div>
+                        <div class="project-body">
+                            <div class="project-description">
+                                Interaktyvi šviesos instaliacija, kuri reaguoja į aplinkos garsus ir keičia LED lempučių spalvas pagal garso intensyvumą. Naudojama klasėje triukšmo lygiui stebėti.
+                            </div>
+                            
+                            <button class="toggle-button" onclick="toggleCode('code1')">Rodyti kodą</button>
+                            
+                            <div id="code1" class="code-section code-hidden">
+                                <pre>let garsoLygis = 0
+let zaliaSviesa = DigitalPin.P0
+let geltonaSviesa = DigitalPin.P1
+let raudonaSviesa = DigitalPin.P2
+
+basic.forever(function () {
+    garsoLygis = input.soundLevel()
+    
+    // Išvalome visas šviesas
+    pins.digitalWritePin(zaliaSviesa, 0)
+    pins.digitalWritePin(geltonaSviesa, 0)
+    pins.digitalWritePin(raudonaSviesa, 0)
+    
+    if (garsoLygis < 40) {
+        pins.digitalWritePin(zaliaSviesa, 1)
+        basic.showIcon(IconNames.Happy)
+    } else if (garsoLygis < 100) {
+        pins.digitalWritePin(geltonaSviesa, 1)
+        basic.showIcon(IconNames.Confused)
+    } else {
+        pins.digitalWritePin(raudonaSviesa, 1)
+        basic.showIcon(IconNames.Sad)
+    }
+})</pre>
+                            </div>
+
+                            <div class="reflection">
+                                <h4>💭 Mokinių refleksija:</h4>
+                                <div class="reflection-item">
+                                    <strong>Ieva:</strong> "Sunkiausia buvo nustatyti tinkamas ribines reikšmes, kad šviesoforas veiktų tiksliai."
+                                </div>
+                                <div class="reflection-item">
+                                    <strong>Lukas:</strong> "Išmokau daug apie elektronikos grandines."
+                                </div>
+                                <div class="reflection-item">
+                                    <strong>Matas:</strong> "Smagu matyti, kad sukūrėme kažką naudingo."
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <div class="project-header">
+                            <h3>🌡️ Elektroninis termometras</h3>
+                            <p class="project-authors">Austėja ir Dominykas, 6 klasė</p>
+                        </div>
+                        <div class="project-body">
+                            <div class="project-description">
+                                Išplėstinis projektas su perspėjimo sistema, duomenų kaupimo funkcija ir belaidžiu perdavimu tarp dviejų micro:bit įrenginių.
+                            </div>
+                            
+                            <button class="toggle-button" onclick="toggleCode('code2')">Rodyti Python kodą</button>
+                            
+                            <div id="code2" class="code-section code-hidden">
+                                <pre>from microbit import *
+import music
+import radio
+
+radio.on()
+radio.config(channel=7)
+
+min_temp = 18
+max_temp = 25
+temperatures = []
+
+while True:
+    current_temp = temperature()
+    temperatures.append(current_temp)
+    
+    if len(temperatures) > 10:
+        temperatures.pop(0)
+    
+    avg_temp = sum(temperatures) / len(temperatures)
+    radio.send(str(avg_temp))
+    
+    if avg_temp < min_temp:
+        display.show(Image.ARROW_S)
+        music.play(music.POWER_DOWN)
+    elif avg_temp > max_temp:
+        display.show(Image.ARROW_N)
+        music.play(music.POWER_UP)
+    else:
+        display.scroll(str(avg_temp))
+    
+    sleep(5000)</pre>
+                            </div>
+
+                            <div class="reflection">
+                                <h4>💭 Mokinių refleksija:</h4>
+                                <div class="reflection-item">
+                                    <strong>Austėja:</strong> "Turėjome išmokti skaičiuoti slankųjį vidurkį ir apriboti svyravimus."
+                                </div>
+                                <div class="reflection-item">
+                                    <strong>Dominykas:</strong> "Labiausiai patiko programuoti radijo ryšį tarp dviejų įrenginių."
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <div class="project-header">
+                            <h3>🌤️ Mini meteorologijos stotis</h3>
+                            <p class="project-authors">Jonas, Emilija ir Tomas, 5 klasė</p>
+                        </div>
+                        <div class="project-body">
+                            <div class="project-description">
+                                Kompleksinis projektas, matuojantis temperatūrą, šviesos intensyvumą ir slėgį. Sistema gali prognozuoti paprastus oros pokyčius.
+                            </div>
+                            
+                            <button class="toggle-button" onclick="toggleCode('code3')">Rodyti kodą</button>
+                            
+                            <div id="code3" class="code-section code-hidden">
+                                <pre>let temperatura = 0
+let apšvietimas = 0
+let slėgis = 0
+let meniu = 0
+
+input.onButtonPressed(Button.A, function () {
+    meniu = (meniu + 1) % 4
+    rodytiMeniu()
+})
+
+function rodytiMeniu() {
+    if (meniu == 0) {
+        basic.showString("T")
+        basic.showNumber(temperatura)
+    } else if (meniu == 1) {
+        basic.showString("A")
+        basic.showNumber(apšvietimas)
+    } else if (meniu == 2) {
+        basic.showString("S")
+        basic.showNumber(slėgis)
+    } else {
+        rodytiPrognoze()
+    }
+}
+
+basic.forever(function () {
+    temperatura = input.temperature()
+    apšvietimas = input.lightLevel()
+    slėgis = pins.analogReadPin(AnalogPin.P0)
+    basic.pause(10000)
+})</pre>
+                            </div>
+
+                            <div class="reflection">
+                                <h4>💭 Mokinių refleksija:</h4>
+                                <div class="reflection-item">
+                                    <strong>Jonas:</strong> "Patiko kurti orų prognozės algoritmą."
+                                </div>
+                                <div class="reflection-item">
+                                    <strong>Emilija:</strong> "Sugalvojome meniu sistemą duomenų pateikimui."
+                                </div>
+                                <div class="reflection-item">
+                                    <strong>Tomas:</strong> "Išmokau kalibruoti jutiklius ir skaityti dokumentaciją."
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="evaluation-section">
+                <h2 style="text-align: center; margin-bottom: 20px; color: #4a5568;">📊 Vertinimo kriterijai</h2>
+                <div class="evaluation-grid">
+                    <div class="evaluation-item">
+                        <h4>Techninis atlikimas</h4>
+                        <div class="evaluation-percentage">40%</div>
+                        <p>Programos struktūra, logika ir funkcionalumas</p>
+                    </div>
+                    <div class="evaluation-item">
+                        <h4>Kūrybiškumas</h4>
+                        <div class="evaluation-percentage">25%</div>
+                        <p>Idėjos originalumas ir inovacijos</p>
+                    </div>
+                    <div class="evaluation-item">
+                        <h4>Dokumentacija</h4>
+                        <div class="evaluation-percentage">15%</div>
+                        <p>Projekto planas ir kodo komentarai</p>
+                    </div>
+                    <div class="evaluation-item">
+                        <h4>Komandinis darbas</h4>
+                        <div class="evaluation-percentage">10%</div>
+                        <p>Bendradarbiavimas ir problemų sprendimas</p>
+                    </div>
+                    <div class="evaluation-item">
+                        <h4>Pristatymas</h4>
+                        <div class="evaluation-percentage">10%</div>
+                        <p>Aiškumas ir demonstracijos kokybė</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-section">
+                <h2>📈 Projekto rezultatai</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number">95%</div>
+                        <p>Mokinių sukūrė veikiančius projektus</p>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">4</div>
+                        <p>Savaitės intensyvaus mokymosi</p>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">12</div>
+                        <p>Akademinių valandų</p>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">3</div>
+                        <p>Unikalūs projektai</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleCode(codeId) {
+            const codeSection = document.getElementById(codeId);
+            const button = codeSection.previousElementSibling;
+            
+            if (codeSection.classList.contains('code-hidden')) {
+                codeSection.classList.remove('code-hidden');
+                button.textContent = 'Slėpti kodą';
+            } else {
+                codeSection.classList.add('code-hidden');
+                button.textContent = 'Rodyti kodą';
+            }
+        }
+
+        // Animacijos pradžia
+        window.addEventListener('load', function() {
+            const cards = document.querySelectorAll('.project-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.animation = 'fadeIn 0.6s ease-in forwards';
+                }, index * 200);
+            });
+        });
+
+        // Parallax efektas
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            const parallax = document.querySelector('.header');
+            const speed = scrolled * 0.5;
+            parallax.style.transform = `translateY(${speed}px)`;
+        });
+    </script>
+</body>
+</html>

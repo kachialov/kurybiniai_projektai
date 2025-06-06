@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mikroplastiko taršos vizualizacija</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header .subtitle {
+            color: #34495e;
+            font-size: 1.1em;
+            font-weight: 300;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto auto;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        
+        .chart-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .map-container {
+            grid-column: 1 / -1;
+            min-height: 500px;
+        }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .control-group label {
+            font-weight: 600;
+            color: #34495e;
+            font-size: 0.9em;
+        }
+        
+        select, input[type="range"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .footer {
+            background: rgba(44, 62, 80, 0.9);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .authors {
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌊 Mikroplastiko taršos vizualizacija</h1>
+        <div class="subtitle">Lietuvos vandens telkinių aplinkosaugos duomenų analizė</div>
+    </div>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label>Metai:</label>
+            <select id="yearSelect">
+                <option value="2019">2019</option>
+                <option value="2020">2020</option>
+                <option value="2021">2021</option>
+                <option value="2022">2022</option>
+                <option value="2023" selected>2023</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Vandens telkinio tipas:</label>
+            <select id="waterTypeSelect">
+                <option value="all">Visi</option>
+                <option value="lake">Ežerai</option>
+                <option value="river">Upės</option>
+                <option value="sea">Jūra</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Taršos lygis (μg/L): <span id="pollutionValue">0-1000</span></label>
+            <input type="range" id="pollutionRange" min="0" max="1000" value="1000" step="50">
+        </div>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-value" id="avgPollution">247</span>
+            <span class="stat-label">Vidutinė tarša (μg/L)</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="totalSamples">156</span>
+            <span class="stat-label">Mėginių skaičius</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="highPollution">23</span>
+            <span class="stat-label">Aukštos taršos vietos</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="trendValue">+12%</span>
+            <span class="stat-label">Metinis pokytis</span>
+        </div>
+    </div>
+    
+    <div class="dashboard">
+        <div class="chart-container map-container">
+            <div class="chart-title">🗺️ Mikroplastiko koncentracija Lietuvos vandens telkiniuose</div>
+            <div id="mapChart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">📈 Taršos pokyčiai per laiką</div>
+            <div id="timeChart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">🎯 Taršos šaltiniai</div>
+            <div id="sourceChart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">🌡️ Šiluminis žemėlapis: Tarša pagal regionus</div>
+            <div id="heatmapChart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">📊 Plastiko tipų pasiskirstymas</div>
+            <div id="plasticTypesChart"></div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div class="authors">Projekto autoriai: Jonas, Viktorija, Matas | 11 klasė</div>
+        <div>Duomenų šaltiniai: Aplinkos apsaugos agentūra, Europos aplinkos agentūra</div>
+    </div>
+
+    <script>
+        // Sintetiniai duomenys demonstracijai
+        const waterBodies = [
+            {name: "Kuršių marios", lat: 55.5, lon: 21.1, pollution: 320, type: "sea", region: "Klaipėda"},
+            {name: "Nemunas", lat: 54.9, lon: 23.9, pollution: 180, type: "river", region: "Kaunas"},
+            {name: "Drūkšių ežeras", lat: 55.6, lon: 26.0, pollution: 95, type: "lake", region: "Utena"},
+            {name: "Baltijos jūra", lat: 55.9, lon: 21.0, pollution: 450, type: "sea", region: "Klaipėda"},
+            {name: "Neris", lat: 54.7, lon: 25.3, pollution: 220, type: "river", region: "Vilnius"},
+            {name: "Aukštaitijos NP ežerai", lat: 55.4, lon: 26.1, pollution: 65, type: "lake", region: "Utena"},
+            {name: "Šventoji", lat: 55.8, lon: 21.1, pollution: 280, type: "river", region: "Klaipėda"},
+            {name: "Vievis", lat: 55.1, lon: 25.1, pollution: 150, type: "river", region: "Vilnius"},
+            {name: "Trakų ežeras", lat: 54.6, lon: 24.9, pollution: 120, type: "lake", region: "Vilnius"},
+            {name: "Šiaulių ežeras", lat: 55.9, lon: 23.3, pollution: 200, type: "lake", region: "Šiauliai"}
+        ];
+        
+        const timeData = {
+            years: [2019, 2020, 2021, 2022, 2023],
+            pollution: [198, 215, 230, 245, 247],
+            samples: [120, 135, 142, 148, 156]
+        };
+        
+        const regions = ["Vilnius", "Kaunas", "Klaipėda", "Šiauliai", "Utena"];
+        const pollutionSources = ["Tekstilė", "Pakuotės", "Automobiliai", "Žvejyba", "Kita"];
+        const plasticTypes = ["PET", "PP", "PE", "PS", "PVC", "Kiti"];
+        
+        // Funkcijos grafikų kūrimui
+        function createMap() {
+            const filteredData = getFilteredData();
+            
+            const trace = {
+                type: 'scattermapbox',
+                lat: filteredData.map(d => d.lat),
+                lon: filteredData.map(d => d.lon),
+                mode: 'markers',
+                marker: {
+                    size: filteredData.map(d => Math.max(8, d.pollution / 20)),
+                    color: filteredData.map(d => d.pollution),
+                    colorscale: [
+                        [0, '#2ecc71'],
+                        [0.3, '#f1c40f'],
+                        [0.6, '#e67e22'],
+                        [1, '#e74c3c']
+                    ],
+                    showscale: true,
+                    colorbar: {
+                        title: 'Tarša (μg/L)',
+                        thickness: 15,
+                        len: 0.7
+                    }
+                },
+                text: filteredData.map(d => 
+                    `<b>${d.name}</b><br>` +
+                    `Tarša: ${d.pollution} μg/L<br>` +
+                    `Tipas: ${getTypeLabel(d.type)}<br>` +
+                    `Regionas: ${d.region}`
+                ),
+                hovertemplate: '%{text}<extra></extra>'
+            };
+            
+            const layout = {
+                mapbox: {
+                    style: 'open-street-map',
+                    center: {lat: 55.2, lon: 24.0},
+                    zoom: 6.5
+                },
+                height: 450,
+                margin: {t: 0, b: 0, l: 0, r: 0}
+            };
+            
+            Plotly.newPlot('mapChart', [trace], layout, {responsive: true});
+        }
+        
+        function createTimeChart() {
+            const trace1 = {
+                x: timeData.years,
+                y: timeData.pollution,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Vidutinė tarša',
+                line: {color: '#e74c3c', width: 3},
+                marker: {size: 8}
+            };
+            
+            const trace2 = {
+                x: timeData.years,
+                y: timeData.samples,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Mėginių skaičius',
+                yaxis: 'y2',
+                line: {color: '#3498db', width: 3},
+                marker: {size: 8}
+            };
+            
+            const layout = {
+                xaxis: {title: 'Metai'},
+                yaxis: {title: 'Tarša (μg/L)', side: 'left'},
+                yaxis2: {
+                    title: 'Mėginių skaičius',
+                    overlaying: 'y',
+                    side: 'right'
+                },
+                height: 300,
+                margin: {t: 20, b: 40, l: 50, r: 50},
+                showlegend: true,
+                legend: {x: 0, y: 1}
+            };
+            
+            Plotly.newPlot('timeChart', [trace1, trace2], layout, {responsive: true});
+        }
+        
+        function createSourceChart() {
+            const values = [35, 28, 15, 12, 10];
+            
+            const trace = {
+                labels: pollutionSources,
+                values: values,
+                type: 'pie',
+                hole: 0.4,
+                marker: {
+                    colors: ['#e74c3c', '#f39c12', '#f1c40f', '#27ae60', '#95a5a6']
+                },
+                textinfo: 'label+percent',
+                textposition: 'outside'
+            };
+            
+            const layout = {
+                height: 300,
+                margin: {t: 20, b: 20, l: 20, r: 20},
+                showlegend: false
+            };
+            
+            Plotly.newPlot('sourceChart', [trace], layout, {responsive: true});
+        }
+        
+        function createHeatmap() {
+            const heatmapData = regions.map(region => 
+                regions.map(r => Math.floor(Math.random() * 300) + 50)
+            );
+            
+            const trace = {
+                z: heatmapData,
+                x: regions,
+                y: regions,
+                type: 'heatmap',
+                colorscale: [
+                    [0, '#2ecc71'],
+                    [0.5, '#f1c40f'],
+                    [1, '#e74c3c']
+                ],
+                showscale: true,
+                colorbar: {
+                    title: 'μg/L',
+                    thickness: 15
+                }
+            };
+            
+            const layout = {
+                height: 300,
+                margin: {t: 20, b: 50, l: 60, r: 20},
+                xaxis: {title: 'Regionas (šaltinis)'},
+                yaxis: {title: 'Regionas (poveikis)'}
+            };
+            
+            Plotly.newPlot('heatmapChart', [trace], layout, {responsive: true});
+        }
+        
+        function createPlasticTypesChart() {
+            const values = [45, 25, 15, 8, 4, 3];
+            
+            const trace = {
+                x: plasticTypes,
+                y: values,
+                type: 'bar',
+                marker: {
+                    color: ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#95a5a6'],
+                    opacity: 0.8
+                },
+                text: values.map(v => v + '%'),
+                textposition: 'auto'
+            };
+            
+            const layout = {
+                height: 300,
+                margin: {t: 20, b: 40, l: 40, r: 20},
+                xaxis: {title: 'Plastiko tipas'},
+                yaxis: {title: 'Procentai (%)'}
+            };
+            
+            Plotly.newPlot('plasticTypesChart', [trace], layout, {responsive: true});
+        }
+        
+        // Pagalbinės funkcijos
+        function getFilteredData() {
+            const year = document.getElementById('yearSelect').value;
+            const waterType = document.getElementById('waterTypeSelect').value;
+            const maxPollution = parseInt(document.getElementById('pollutionRange').value);
+            
+            let filtered = waterBodies.filter(d => d.pollution <= maxPollution);
+            
+            if (waterType !== 'all') {
+                filtered = filtered.filter(d => d.type === waterType);
+            }
+            
+            return filtered;
+        }
+        
+        function getTypeLabel(type) {
+            const labels = {
+                'lake': 'Ežeras',
+                'river': 'Upė',
+                'sea': 'Jūra'
+            };
+            return labels[type] || type;
+        }
+        
+        function updateStats() {
+            const filtered = getFilteredData();
+            const avgPoll = Math.round(filtered.reduce((sum, d) => sum + d.pollution, 0) / filtered.length);
+            const highPoll = filtered.filter(d => d.pollution > 250).length;
+            
+            document.getElementById('avgPollution').textContent = avgPoll || 0;
+            document.getElementById('totalSamples').textContent = filtered.length;
+            document.getElementById('highPollution').textContent = highPoll;
+        }
+        
+        function updatePollutionValue() {
+            const value = document.getElementById('pollutionRange').value;
+            document.getElementById('pollutionValue').textContent = `0-${value}`;
+        }
+        
+        // Event listeners
+        document.getElementById('yearSelect').addEventListener('change', () => {
+            createMap();
+            updateStats();
+        });
+        
+        document.getElementById('waterTypeSelect').addEventListener('change', () => {
+            createMap();
+            updateStats();
+        });
+        
+        document.getElementById('pollutionRange').addEventListener('input', () => {
+            updatePollutionValue();
+            createMap();
+            updateStats();
+        });
+        
+        // Inicializacija
+        function initDashboard() {
+            createMap();
+            createTimeChart();
+            createSourceChart();
+            createHeatmap();
+            createPlasticTypesChart();
+            updateStats();
+            updatePollutionValue();
+        }
+        
+        // Paleisti po DOM įkėlimo
+        document.addEventListener('DOMContentLoaded', initDashboard);
+        
+        // Responsive
+        window.addEventListener('resize', () => {
+            setTimeout(() => {
+                Plotly.Plots.resize('mapChart');
+                Plotly.Plots.resize('timeChart');
+                Plotly.Plots.resize('sourceChart');
+                Plotly.Plots.resize('heatmapChart');
+                Plotly.Plots.resize('plasticTypesChart');
+            }, 100);
+        });
+    </script>
+</body>
+</html>

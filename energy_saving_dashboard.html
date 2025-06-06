@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elektros taupymas mokykloje</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-bottom: 3px solid #4CAF50;
+        }
+        
+        .header h1 {
+            color: #2E7D32;
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        
+        .header p {
+            text-align: center;
+            color: #666;
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .dashboard-container {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .energy-summary {
+            grid-column: 1 / -1;
+            text-align: center;
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+            color: white;
+        }
+        
+        .energy-meter {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 1rem;
+        }
+        
+        .gauge-container {
+            position: relative;
+            width: 200px;
+            height: 120px;
+            margin: 1rem 0;
+        }
+        
+        .gauge {
+            width: 200px;
+            height: 100px;
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            border-bottom: 8px solid transparent;
+            border-radius: 100px 100px 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gauge-fill {
+            position: absolute;
+            bottom: -8px;
+            left: -8px;
+            width: 216px;
+            height: 108px;
+            border: 8px solid #FFD700;
+            border-bottom: 8px solid transparent;
+            border-radius: 100px 100px 0 0;
+            transform: rotate(-45deg);
+            transform-origin: 50% 100%;
+            animation: fillGauge 2s ease-out;
+        }
+        
+        @keyframes fillGauge {
+            from { transform: rotate(-90deg); }
+            to { transform: rotate(-45deg); }
+        }
+        
+        .current-usage {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        
+        .comparison {
+            font-size: 1.2rem;
+            margin-top: 0.5rem;
+        }
+        
+        .savings-positive {
+            color: #FFD700;
+            font-weight: bold;
+        }
+        
+        .location-breakdown h3, .challenges-section h3 {
+            color: #2E7D32;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 0.5rem;
+        }
+        
+        .location-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: linear-gradient(90deg, rgba(76, 175, 80, 0.1), transparent);
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+            transition: background 0.3s ease;
+        }
+        
+        .location-item:hover {
+            background: linear-gradient(90deg, rgba(76, 175, 80, 0.2), transparent);
+        }
+        
+        .location-name {
+            font-weight: 600;
+            color: #2E7D32;
+        }
+        
+        .location-usage {
+            font-weight: bold;
+            color: #666;
+        }
+        
+        .challenge-cards {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .challenge-card {
+            background: linear-gradient(135deg, #FF9800, #FF5722);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+        
+        .challenge-card:hover {
+            transform: scale(1.02);
+        }
+        
+        .challenge-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .challenge-progress {
+            background: rgba(255, 255, 255, 0.3);
+            height: 8px;
+            border-radius: 4px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        
+        .challenge-progress-fill {
+            height: 100%;
+            background: #FFD700;
+            border-radius: 4px;
+            transition: width 2s ease-out;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 10px;
+            border: 2px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2E7D32;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        
+        .team-info {
+            background: linear-gradient(135deg, #9C27B0, #673AB7);
+            color: white;
+            text-align: center;
+        }
+        
+        .team-members {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .member {
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔋 Elektros taupymas mokykloje</h1>
+        <p>10 klasės skaitmeninė pilietiškumo kampanija</p>
+    </div>
+    
+    <div class="dashboard-container">
+        <div class="card energy-summary">
+            <h2>Šios dienos elektros suvartojimas</h2>
+            <div class="energy-meter">
+                <div class="gauge-container">
+                    <div class="gauge">
+                        <div class="gauge-fill"></div>
+                    </div>
+                </div>
+                <div class="current-usage pulse">34.7 kWh</div>
+                <div class="comparison">
+                    <span class="savings-positive">-17% 🎉</span><br>
+                    lyginant su praėjusios savaitės vidurkiu
+                </div>
+            </div>
+        </div>
+        
+        <div class="card location-breakdown">
+            <h3>📍 Suvartojimas pagal patalpas</h3>
+            <div class="location-item">
+                <span class="location-name">💻 Kompiuterių klasė</span>
+                <span class="location-usage">12.3 kWh</span>
+            </div>
+            <div class="location-item">
+                <span class="location-name">🍽️ Valgykla</span>
+                <span class="location-usage">8.7 kWh</span>
+            </div>
+            <div class="location-item">
+                <span class="location-name">🏃 Aktų salė</span>
+                <span class="location-usage">7.2 kWh</span>
+            </div>
+            <div class="location-item">
+                <span class="location-name">🚶 Koridoriai</span>
+                <span class="location-usage">6.5 kWh</span>
+            </div>
+        </div>
+        
+        <div class="card challenges-section">
+            <h3>🏆 Aktyvūs iššūkiai</h3>
+            <div class="challenge-cards">
+                <div class="challenge-card">
+                    <div class="challenge-title">Savaitės taupymo čempionai</div>
+                    <div class="challenge-progress">
+                        <div class="challenge-progress-fill" style="width: 75%;"></div>
+                    </div>
+                    <div>🥇 Veda 10A klasė su -23% taupymu!</div>
+                </div>
+                <div class="challenge-card">
+                    <div class="challenge-title">Išjunk šviesą per pertraukas</div>
+                    <div class="challenge-progress">
+                        <div class="challenge-progress-fill" style="width: 60%;"></div>
+                    </div>
+                    <div>⚡ 12 klasių jau prisijungė!</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>📊 Projekto statistika</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">8</span>
+                    <span class="stat-label">IoT jutikliai</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">85%</span>
+                    <span class="stat-label">Bendruomenės žinomumas</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">12</span>
+                    <span class="stat-label">Dalyvavusių klasių</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">17%</span>
+                    <span class="stat-label">Energijos taupymas</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card team-info">
+            <h3>👥 Projekto komanda</h3>
+            <p>10 klasės mokiniai</p>
+            <div class="team-members">
+                <div class="member">Rokas</div>
+                <div class="member">Austėja</div>
+                <div class="member">Domantas</div>
+                <div class="member">Agnė</div>
+            </div>
+            <div style="margin-top: 1.5rem;">
+                <strong>Technologijos:</strong><br>
+                Arduino • HTML/CSS/JS • SQLite • Node.js
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Paprastas duomenų atnaujinimo simuliavimas
+        function updateData() {
+            const usage = document.querySelector('.current-usage');
+            const locations = document.querySelectorAll('.location-usage');
+            
+            // Simuliuojame realaus laiko duomenų atnaujinimą
+            setInterval(() => {
+                const currentValue = parseFloat(usage.textContent);
+                const newValue = (currentValue + (Math.random() - 0.5) * 0.5).toFixed(1);
+                usage.textContent = newValue + ' kWh';
+                
+                // Atnaujinome atskirų patalpų duomenis
+                locations.forEach(location => {
+                    const currentLoc = parseFloat(location.textContent);
+                    const newLoc = (currentLoc + (Math.random() - 0.5) * 0.2).toFixed(1);
+                    location.textContent = newLoc + ' kWh';
+                });
+            }, 5000);
+        }
+        
+        // Paleidžiame duomenų atnaujinimą
+        updateData();
+        
+        // Pridedame hover efektus
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emocijų žemėlapis</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            cursor: none;
+        }
+        
+        #canvas {
+            display: block;
+            background: transparent;
+        }
+        
+        .ui-overlay {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            z-index: 10;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .emotion-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            mix-blend-mode: difference;
+            transition: transform 0.1s ease;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="custom-cursor" id="cursor"></div>
+    
+    <div class="ui-overlay">
+        <div>Pelės pozicija: <span id="mousePos">0, 0</span></div>
+        <div>Intensyvumas: <span id="intensity">0</span>%</div>
+    </div>
+    
+    <div class="emotion-indicator" id="emotionDisplay">
+        Neutralus
+    </div>
+    
+    <div class="instructions">
+        <strong>Valdymas:</strong> Kairysis pelės mygtukas - Džiaugsmas | Dešinysis - Liūdesys | 
+        <strong>Klaviatūra:</strong> A - Ramybė | S - Pyktis | D - Nuostaba | F - Baimė
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const cursor = document.getElementById('cursor');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Emotion system
+        let currentEmotion = 'neutral';
+        let mouseIntensity = 0;
+        let mouseX = 0, mouseY = 0;
+        let particles = [];
+        let animationFrame = 0;
+        
+        // Audio context
+        let audioContext;
+        let oscillators = [];
+        
+        // Color palettes for emotions
+        const emotionPalettes = {
+            joy: ['#FFD700', '#FF6B35', '#F7931E', '#FFB84D', '#FF69B4', '#32CD32'],
+            sadness: ['#4682B4', '#191970', '#483D8B', '#6495ED', '#1E90FF', '#87CEEB'],
+            anger: ['#DC143C', '#B22222', '#8B0000', '#FF4500', '#FF6347', '#CD5C5C'],
+            peace: ['#98FB98', '#90EE90', '#00FA9A', '#20B2AA', '#48D1CC', '#AFEEEE'],
+            surprise: ['#FFD700', '#FFFF00', '#FFA500', '#FF8C00', '#FF7F50', '#F0E68C'],
+            fear: ['#2F4F4F', '#696969', '#778899', '#708090', '#A9A9A9', '#C0C0C0'],
+            neutral: ['#E6E6FA', '#DDA0DD', '#DA70D6', '#BA55D3', '#9370DB', '#8A2BE2']
+        };
+        
+        // Emotion properties
+        const emotionProperties = {
+            joy: { speed: 2.5, complexity: 8, size: 15, frequency: 440 },
+            sadness: { speed: 0.8, complexity: 4, size: 8, frequency: 220 },
+            anger: { speed: 3.0, complexity: 12, size: 20, frequency: 660 },
+            peace: { speed: 1.2, complexity: 6, size: 12, frequency: 330 },
+            surprise: { speed: 4.0, complexity: 10, size: 18, frequency: 880 },
+            fear: { speed: 1.8, complexity: 3, size: 6, frequency: 110 },
+            neutral: { speed: 1.5, complexity: 5, size: 10, frequency: 440 }
+        };
+        
+        // Particle class
+        class Particle {
+            constructor(x, y, emotion) {
+                this.x = x;
+                this.y = y;
+                this.emotion = emotion;
+                this.age = 0;
+                this.maxAge = 120 + Math.random() * 60;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.size = Math.random() * emotionProperties[emotion].size + 2;
+                this.color = emotionPalettes[emotion][Math.floor(Math.random() * emotionPalettes[emotion].length)];
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+            }
+            
+            update() {
+                this.age++;
+                const props = emotionProperties[this.emotion];
+                
+                // Movement based on emotion
+                this.x += this.vx * props.speed;
+                this.y += this.vy * props.speed;
+                
+                // Add noise-based movement
+                const noiseX = Math.sin(this.x * 0.01 + animationFrame * 0.02) * 2;
+                const noiseY = Math.cos(this.y * 0.01 + animationFrame * 0.02) * 2;
+                this.x += noiseX;
+                this.y += noiseY;
+                
+                // Rotation
+                this.rotation += this.rotationSpeed;
+                
+                // Fade out over time
+                this.alpha = 1 - (this.age / this.maxAge);
+                
+                // Attraction to mouse
+                const dx = mouseX - this.x;
+                const dy = mouseY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 150) {
+                    const force = (150 - distance) / 150;
+                    this.vx += (dx / distance) * force * 0.1;
+                    this.vy += (dy / distance) * force * 0.1;
+                }
+                
+                // Apply friction
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+            }
+            
+            draw() {
+                if (this.alpha <= 0) return;
+                
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                // Create gradient
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+                gradient.addColorStop(0, this.color);
+                gradient.addColorStop(1, this.color + '00');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                
+                // Draw different shapes based on emotion
+                switch (this.emotion) {
+                    case 'joy':
+                        // Star shape
+                        this.drawStar(0, 0, 5, this.size, this.size * 0.5);
+                        break;
+                    case 'anger':
+                        // Triangle
+                        this.drawTriangle(0, 0, this.size);
+                        break;
+                    case 'peace':
+                        // Hexagon
+                        this.drawPolygon(0, 0, 6, this.size);
+                        break;
+                    default:
+                        // Circle
+                        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                        break;
+                }
+                
+                ctx.fill();
+                ctx.restore();
+            }
+            
+            drawStar(x, y, spikes, outerRadius, innerRadius) {
+                let rot = Math.PI / 2 * 3;
+                let step = Math.PI / spikes;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, y - outerRadius);
+                
+                for (let i = 0; i < spikes; i++) {
+                    ctx.lineTo(x + Math.cos(rot) * outerRadius, y + Math.sin(rot) * outerRadius);
+                    rot += step;
+                    ctx.lineTo(x + Math.cos(rot) * innerRadius, y + Math.sin(rot) * innerRadius);
+                    rot += step;
+                }
+                
+                ctx.closePath();
+            }
+            
+            drawTriangle(x, y, size) {
+                ctx.beginPath();
+                ctx.moveTo(x, y - size);
+                ctx.lineTo(x - size, y + size);
+                ctx.lineTo(x + size, y + size);
+                ctx.closePath();
+            }
+            
+            drawPolygon(x, y, sides, radius) {
+                ctx.beginPath();
+                const angle = (Math.PI * 2) / sides;
+                ctx.moveTo(x + radius, y);
+                for (let i = 1; i < sides; i++) {
+                    ctx.lineTo(x + Math.cos(angle * i) * radius, y + Math.sin(angle * i) * radius);
+                }
+                ctx.closePath();
+            }
+            
+            isDead() {
+                return this.age >= this.maxAge;
+            }
+        }
+        
+        // Initialize audio
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        // Play emotion sound
+        function playEmotionSound(emotion) {
+            if (!audioContext) return;
+            
+            const props = emotionProperties[emotion];
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(props.frequency, audioContext.currentTime);
+            oscillator.type = emotion === 'peace' ? 'sine' : 'square';
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+        
+        // Transform emotion function
+        function transformEmotion(emotion, intensity) {
+            const props = emotionProperties[emotion];
+            return {
+                colorPalette: emotionPalettes[emotion],
+                movementSpeed: props.speed * intensity,
+                shapeComplexity: Math.floor(props.complexity * intensity),
+                size: props.size * intensity
+            };
+        }
+        
+        // Generate pattern
+        function generatePattern(x, y, emotion) {
+            const { colorPalette, movementSpeed, shapeComplexity } = transformEmotion(emotion, mouseIntensity);
+            
+            for (let i = 0; i < Math.min(shapeComplexity, 5); i++) {
+                particles.push(new Particle(x, y, emotion));
+            }
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            // Update cursor position
+            cursor.style.left = mouseX - 10 + 'px';
+            cursor.style.top = mouseY - 10 + 'px';
+            
+            // Calculate intensity based on mouse speed
+            const speed = Math.sqrt(e.movementX * e.movementX + e.movementY * e.movementY);
+            mouseIntensity = Math.min(speed / 20, 1);
+            
+            // Update UI
+            document.getElementById('mousePos').textContent = `${mouseX}, ${mouseY}`;
+            document.getElementById('intensity').textContent = Math.floor(mouseIntensity * 100);
+            
+            // Generate particles
+            if (Math.random() < 0.3) {
+                generatePattern(mouseX, mouseY, currentEmotion);
+            }
+        });
+        
+        canvas.addEventListener('mousedown', (e) => {
+            initAudio();
+            
+            if (e.button === 0) { // Left click - Joy
+                setEmotion('joy');
+            } else if (e.button === 2) { // Right click - Sadness
+                setEmotion('sadness');
+            }
+            
+            // Generate burst of particles
+            for (let i = 0; i < 10; i++) {
+                generatePattern(mouseX + (Math.random() - 0.5) * 50, mouseY + (Math.random() - 0.5) * 50, currentEmotion);
+            }
+        });
+        
+        // Prevent context menu
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            initAudio();
+            
+            switch(e.key.toLowerCase()) {
+                case 'a': setEmotion('peace'); break;
+                case 's': setEmotion('anger'); break;
+                case 'd': setEmotion('surprise'); break;
+                case 'f': setEmotion('fear'); break;
+                case ' ': setEmotion('neutral'); break;
+            }
+            
+            // Generate particles at mouse position
+            for (let i = 0; i < 5; i++) {
+                generatePattern(mouseX + (Math.random() - 0.5) * 30, mouseY + (Math.random() - 0.5) * 30, currentEmotion);
+            }
+        });
+        
+        // Set emotion function
+        function setEmotion(emotion) {
+            currentEmotion = emotion;
+            
+            // Update emotion display
+            const emotionNames = {
+                joy: 'Džiaugsmas',
+                sadness: 'Liūdesys',
+                anger: 'Pyktis',
+                peace: 'Ramybė',
+                surprise: 'Nuostaba',
+                fear: 'Baimė',
+                neutral: 'Neutralus'
+            };
+            
+            const emotionDisplay = document.getElementById('emotionDisplay');
+            emotionDisplay.textContent = emotionNames[emotion];
+            emotionDisplay.style.color = emotionPalettes[emotion][0];
+            emotionDisplay.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                emotionDisplay.style.transform = 'scale(1)';
+            }, 200);
+            
+            // Play sound
+            playEmotionSound(emotion);
+        }
+        
+        // Animation loop
+        function animate() {
+            animationFrame++;
+            
+            // Create fading trail effect
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                
+                if (particles[i].isDead()) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // Add ambient particles
+            if (Math.random() < 0.1 && particles.length < 200) {
+                particles.push(new Particle(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height,
+                    currentEmotion
+                ));
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Resize handler
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Start animation
+        animate();
+        
+        // Initial cursor position
+        cursor.style.left = '50%';
+        cursor.style.top = '50%';
+        
+        // Welcome message
+        setTimeout(() => {
+            setEmotion('neutral');
+        }, 500);
+    </script>
+</body>
+</html>
