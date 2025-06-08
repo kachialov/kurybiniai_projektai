@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>micro:bit Oro Stotis</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 50%, #6c5ce7 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            background: linear-gradient(135deg, #0984e3, #6c5ce7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .microbit-section {
+            background: linear-gradient(135deg, #2d3436, #636e72);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .microbit {
+            background: #2c3e50;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .display {
+            background: #000;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 0 0 20px #ff6b6b;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                linear-gradient(45deg, transparent 49%, rgba(255, 107, 107, 0.05) 50%, transparent 51%);
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+
+        .btn {
+            width: 50px;
+            height: 50px;
+            background: #e74c3c;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .sensor-data {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .sensor-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sensor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-color);
+        }
+
+        .sensor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .sensor-card.temperature { --accent-color: linear-gradient(90deg, #ff7675, #fd79a8); }
+        .sensor-card.light { --accent-color: linear-gradient(90deg, #fdcb6e, #f39c12); }
+        .sensor-card.pressure { --accent-color: linear-gradient(90deg, #74b9ff, #0984e3); }
+        .sensor-card.forecast { --accent-color: linear-gradient(90deg, #a29bfe, #6c5ce7); }
+
+        .sensor-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .sensor-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2d3436;
+        }
+
+        .sensor-value {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 15px 0;
+            background: var(--accent-color);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sensor-unit {
+            font-size: 0.4em;
+            opacity: 0.7;
+        }
+
+        .sensor-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .status-cold { background: rgba(116, 185, 255, 0.2); color: #0984e3; }
+        .status-normal { background: rgba(0, 184, 148, 0.2); color: #00b894; }
+        .status-warm { background: rgba(253, 203, 110, 0.2); color: #f39c12; }
+        .status-hot { background: rgba(255, 118, 117, 0.2); color: #e17055; }
+
+        .status-dark { background: rgba(45, 52, 54, 0.2); color: #2d3436; }
+        .status-dim { background: rgba(116, 185, 255, 0.2); color: #0984e3; }
+        .status-bright { background: rgba(253, 203, 110, 0.2); color: #f39c12; }
+
+        .status-low { background: rgba(116, 185, 255, 0.2); color: #0984e3; }
+        .status-high { background: rgba(255, 118, 117, 0.2); color: #e17055; }
+
+        .menu-indicator {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-weight: bold;
+            color: #2d3436;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .forecast-section {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+            color: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(108, 92, 231, 0.3);
+        }
+
+        .forecast-section h3 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+        .weather-icon {
+            font-size: 4em;
+            margin: 20px 0;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .controls {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            margin: 0 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(116, 185, 255, 0.3);
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, #0984e3, #6c5ce7);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(116, 185, 255, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .sensor-data {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌤️ micro:bit Oro Stotis</h1>
+            <p>Temperatūros, apšvietimo ir slėgio stebėjimo sistema</p>
+        </div>
+
+        <div class="main-content">
+            <div class="microbit-section">
+                <h3 style="color: white; margin-top: 0;">🎛️ micro:bit Valdiklis</h3>
+                
+                <div class="microbit">
+                    <div class="display" id="display">T</div>
+                    <div class="buttons">
+                        <button class="btn" onclick="pressButtonA()">A</button>
+                        <button class="btn" onclick="pressButtonB()">B</button>
+                    </div>
+                </div>
+
+                <div class="menu-indicator">
+                    <div>Dabartinis meniu: <span id="menuStatus">Temperatūra</span></div>
+                    <div style="font-size: 0.9em; margin-top: 5px; opacity: 0.7;">
+                        Spauskite mygtuką A, kad perjungtumėte
+                    </div>
+                </div>
+            </div>
+
+            <div class="sensor-data">
+                <div class="sensor-card temperature">
+                    <div class="sensor-icon">🌡️</div>
+                    <div class="sensor-title">Temperatūra</div>
+                    <div class="sensor-value" id="tempValue">22<span class="sensor-unit">°C</span></div>
+                    <div class="sensor-status status-normal" id="tempStatus">Normali</div>
+                </div>
+
+                <div class="sensor-card light">
+                    <div class="sensor-icon">💡</div>
+                    <div class="sensor-title">Apšvietimas</div>
+                    <div class="sensor-value" id="lightValue">128<span class="sensor-unit">lx</span></div>
+                    <div class="sensor-status status-dim" id="lightStatus">Vidutinis</div>
+                </div>
+
+                <div class="sensor-card pressure">
+                    <div class="sensor-icon">🌬️</div>
+                    <div class="sensor-title">Slėgis</div>
+                    <div class="sensor-value" id="pressureValue">512<span class="sensor-unit">hPa</span></div>
+                    <div class="sensor-status status-normal" id="pressureStatus">Normalus</div>
+                </div>
+
+                <div class="sensor-card forecast">
+                    <div class="sensor-icon">🔮</div>
+                    <div class="sensor-title">Prognozė</div>
+                    <div class="weather-icon" id="weatherIcon">☀️</div>
+                    <div id="forecastText">Giedra ir šilta</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="simulateReading()">📊 Atnaujinti duomenis</button>
+            <button class="control-btn" onclick="startAutoUpdate()">🔄 Automatinis režimas</button>
+            <button class="control-btn" onclick="stopAutoUpdate()">⏹️ Sustabdyti</button>
+        </div>
+    </div>
+
+    <script>
+        let temperatura = 22;
+        let apsvietimas = 128;
+        let slegis = 512;
+        let meniu = 0;
+        let autoUpdateInterval;
+
+        const menuItems = ['Temperatūra', 'Apšvietimas', 'Slėgis', 'Prognozė'];
+        const menuLetters = ['T', 'A', 'S', 'P'];
+
+        function pressButtonA() {
+            meniu = (meniu + 1) % 4;
+            rodytiMeniu();
+            updateMenuStatus();
+        }
+
+        function pressButtonB() {
+            // Papildoma funkcija ateičiai
+            simulateReading();
+        }
+
+        function rodytiMeniu() {
+            const display = document.getElementById('display');
+            
+            if (meniu === 0) {
+                display.innerHTML = `<div>T</div><div style="font-size: 0.8em;">${temperatura}</div>`;
+            } else if (meniu === 1) {
+                display.innerHTML = `<div>A</div><div style="font-size: 0.8em;">${apsvietimas}</div>`;
+            } else if (meniu === 2) {
+                display.innerHTML = `<div>S</div><div style="font-size: 0.8em;">${slegis}</div>`;
+            } else {
+                rodytiPrognoze();
+            }
+        }
+
+        function rodytiPrognoze() {
+            const display = document.getElementById('display');
+            let icon = '☀️';
+            
+            if (temperatura < 10) icon = '❄️';
+            else if (temperatura > 30) icon = '🔥';
+            else if (apsvietimas < 50) icon = '🌙';
+            else if (slegis > 600) icon = '⛈️';
+            
+            display.innerHTML = icon;
+        }
+
+        function updateMenuStatus() {
+            document.getElementById('menuStatus').textContent = menuItems[meniu];
+        }
+
+        function simulateReading() {
+            // Simuliuojame realistiškas reikšmes
+            temperatura = Math.floor(Math.random() * 35) + 5; // 5-40°C
+            apsvietimas = Math.floor(Math.random() * 255); // 0-255
+            slegis = Math.floor(Math.random() * 400) + 400; // 400-800
+
+            updateDisplay();
+            rodytiMeniu();
+        }
+
+        function updateDisplay() {
+            // Temperatūros atnaujinimas
+            document.getElementById('tempValue').innerHTML = `${temperatura}<span class="sensor-unit">°C</span>`;
+            
+            let tempStatus = 'Normali';
+            let tempClass = 'status-normal';
+            if (temperatura < 10) {
+                tempStatus = 'Šalta';
+                tempClass = 'status-cold';
+            } else if (temperatura > 25 && temperatura <= 30) {
+                tempStatus = 'Šilta';
+                tempClass = 'status-warm';
+            } else if (temperatura > 30) {
+                tempStatus = 'Karšta';
+                tempClass = 'status-hot';
+            }
+            
+            const tempStatusEl = document.getElementById('tempStatus');
+            tempStatusEl.textContent = tempStatus;
+            tempStatusEl.className = `sensor-status ${tempClass}`;
+
+            // Apšvietimo atnaujinimas
+            document.getElementById('lightValue').innerHTML = `${apsvietimas}<span class="sensor-unit">lx</span>`;
+            
+            let lightStatus = 'Vidutinis';
+            let lightClass = 'status-dim';
+            if (apsvietimas < 50) {
+                lightStatus = 'Tamsus';
+                lightClass = 'status-dark';
+            } else if (apsvietimas > 200) {
+                lightStatus = 'Šviesus';
+                lightClass = 'status-bright';
+            }
+            
+            const lightStatusEl = document.getElementById('lightStatus');
+            lightStatusEl.textContent = lightStatus;
+            lightStatusEl.className = `sensor-status ${lightClass}`;
+
+            // Slėgio atnaujinimas
+            document.getElementById('pressureValue').innerHTML = `${slegis}<span class="sensor-unit">hPa</span>`;
+            
+            let pressureStatus = 'Normalus';
+            let pressureClass = 'status-normal';
+            if (slegis < 500) {
+                pressureStatus = 'Žemas';
+                pressureClass = 'status-low';
+            } else if (slegis > 650) {
+                pressureStatus = 'Aukštas';
+                pressureClass = 'status-high';
+            }
+            
+            const pressureStatusEl = document.getElementById('pressureStatus');
+            pressureStatusEl.textContent = pressureStatus;
+            pressureStatusEl.className = `sensor-status ${pressureClass}`;
+
+            // Prognozės atnaujinimas
+            updateForecast();
+        }
+
+        function updateForecast() {
+            let icon = '☀️';
+            let forecast = 'Giedra ir šilta';
+            
+            if (temperatura < 5) {
+                icon = '❄️';
+                forecast = 'Šalta, galimai sniegas';
+            } else if (temperatura < 15 && apsvietimas < 100) {
+                icon = '☁️';
+                forecast = 'Vėsu ir debesuota';
+            } else if (slegis > 650) {
+                icon = '⛈️';
+                forecast = 'Galimas lietus ar audra';
+            } else if (apsvietimas < 50) {
+                icon = '🌙';
+                forecast = 'Naktis arba labai debesuota';
+            } else if (temperatura > 30) {
+                icon = '🔥';
+                forecast = 'Labai karšta diena';
+            }
+            
+            document.getElementById('weatherIcon').textContent = icon;
+            document.getElementById('forecastText').textContent = forecast;
+        }
+
+        function startAutoUpdate() {
+            stopAutoUpdate(); // Sustabdome esamą, jei yra
+            autoUpdateInterval = setInterval(() => {
+                simulateReading();
+            }, 3000); // Kas 3 sekundes
+        }
+
+        function stopAutoUpdate() {
+            if (autoUpdateInterval) {
+                clearInterval(autoUpdateInterval);
+                autoUpdateInterval = null;
+            }
+        }
+
+        // Pradinis nustatymas
+        updateDisplay();
+        rodytiMeniu();
+        updateMenuStatus();
+    </script>
+</body>
+</html>

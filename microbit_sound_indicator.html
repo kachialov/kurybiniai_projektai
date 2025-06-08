@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>micro:bit Garso Lygio Indikatorius</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .microbit {
+            background: #2c3e50;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px auto;
+            width: 300px;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .display {
+            background: #000;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            border-radius: 5px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 2px;
+            padding: 10px;
+            position: relative;
+        }
+
+        .pixel {
+            background: #333;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .pixel.on {
+            background: #ff6b6b;
+            box-shadow: 0 0 10px #ff6b6b;
+        }
+
+        .leds {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .led {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid #444;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .led.green { background: #2ecc71; box-shadow: 0 0 20px #2ecc71; }
+        .led.yellow { background: #f1c40f; box-shadow: 0 0 20px #f1c40f; }
+        .led.red { background: #e74c3c; box-shadow: 0 0 20px #e74c3c; }
+        .led.off { background: #333; box-shadow: none; }
+
+        .sound-level {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .sound-meter {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .sound-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .controls {
+            margin: 20px 0;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .status {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .status.quiet {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+        }
+
+        .status.moderate {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f39c12;
+        }
+
+        .status.loud {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+        }
+
+        .code-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: left;
+            border: 1px solid #e9ecef;
+        }
+
+        .code-info h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 micro:bit Garso Lygio Indikatorius</h1>
+        
+        <div class="microbit">
+            <div class="display" id="display">
+                <!-- 5x5 LED matrica -->
+                <div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div>
+                <div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div>
+                <div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div>
+                <div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div>
+                <div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div>
+            </div>
+            
+            <div class="leds">
+                <div class="led off" id="greenLed" title="Žalia (P0)"></div>
+                <div class="led off" id="yellowLed" title="Geltona (P1)"></div>
+                <div class="led off" id="redLed" title="Raudona (P2)"></div>
+            </div>
+        </div>
+
+        <div class="sound-level">
+            <h3>Garso Lygis: <span id="soundValue">0</span></h3>
+            <div class="sound-meter">
+                <div class="sound-bar" id="soundBar"></div>
+            </div>
+        </div>
+
+        <div class="status quiet" id="status">
+            🟢 Tylu - Žalia šviesa
+        </div>
+
+        <div class="controls">
+            <button onclick="simulateSound(20)">Tylu (< 40)</button>
+            <button onclick="simulateSound(70)">Vidutiniškai (40-99)</button>
+            <button onclick="simulateSound(120)">Garsiai (≥ 100)</button>
+            <button onclick="startRandomSimulation()">Atsitiktinis testas</button>
+        </div>
+
+        <div class="code-info">
+            <h3>📋 Kaip veikia kodas:</h3>
+            <p><strong>Kintamieji:</strong> garsoLygis saugo dabartinį garso lygį</p>
+            <p><strong>LED jungimai:</strong> P0 (žalia), P1 (geltona), P2 (raudona)</p>
+            <p><strong>Logika:</strong></p>
+            <ul>
+                <li>< 40: Žalia LED + laimingas veidelis 😊</li>
+                <li>40-99: Geltona LED + suglumęs veidelis 😕</li>
+                <li>≥ 100: Raudona LED + liūdnas veidelis 😢</li>
+            </ul>
+            <p><strong>Funkcija:</strong> basic.forever() nuolat stebi garso lygį ir atnaujina indikatorius</p>
+        </div>
+    </div>
+
+    <script>
+        let currentSoundLevel = 0;
+        let simulationInterval;
+
+        // LED šablonai 5x5 matricai
+        const patterns = {
+            happy: [0,0,1,0,0, 0,1,0,1,0, 0,0,0,0,0, 1,0,0,0,1, 0,1,1,1,0],
+            confused: [0,1,0,1,0, 0,0,0,0,0, 0,0,1,0,0, 0,1,0,1,0, 1,0,0,0,1],
+            sad: [0,1,0,1,0, 0,0,0,0,0, 0,0,0,0,0, 0,1,1,1,0, 1,0,0,0,1]
+        };
+
+        function updateDisplay(pattern) {
+            const pixels = document.querySelectorAll('.pixel');
+            pixels.forEach((pixel, index) => {
+                if (patterns[pattern][index]) {
+                    pixel.classList.add('on');
+                } else {
+                    pixel.classList.remove('on');
+                }
+            });
+        }
+
+        function updateLEDs(soundLevel) {
+            const greenLed = document.getElementById('greenLed');
+            const yellowLed = document.getElementById('yellowLed');
+            const redLed = document.getElementById('redLed');
+            const status = document.getElementById('status');
+
+            // Išjungti visas LED
+            greenLed.className = 'led off';
+            yellowLed.className = 'led off';
+            redLed.className = 'led off';
+
+            if (soundLevel < 40) {
+                greenLed.className = 'led green';
+                updateDisplay('happy');
+                status.textContent = '🟢 Tylu - Žalia šviesa';
+                status.className = 'status quiet';
+            } else if (soundLevel < 100) {
+                yellowLed.className = 'led yellow';
+                updateDisplay('confused');
+                status.textContent = '🟡 Vidutiniškai - Geltona šviesa';
+                status.className = 'status moderate';
+            } else {
+                redLed.className = 'led red';
+                updateDisplay('sad');
+                status.textContent = '🔴 Garsiai - Raudona šviesa';
+                status.className = 'status loud';
+            }
+        }
+
+        function simulateSound(level) {
+            clearInterval(simulationInterval);
+            currentSoundLevel = level;
+            document.getElementById('soundValue').textContent = level;
+            document.getElementById('soundBar').style.width = Math.min(level / 150 * 100, 100) + '%';
+            updateLEDs(level);
+        }
+
+        function startRandomSimulation() {
+            clearInterval(simulationInterval);
+            simulationInterval = setInterval(() => {
+                const randomLevel = Math.floor(Math.random() * 150);
+                simulateSound(randomLevel);
+            }, 2000);
+        }
+
+        // Pradinis būsenos nustatymas
+        simulateSound(20);
+    </script>
+</body>
+</html>

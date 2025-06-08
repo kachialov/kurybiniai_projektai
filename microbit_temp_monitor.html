@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>micro:bit Temperatūros Monitoringas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .devices-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .device {
+            background: linear-gradient(135deg, #2d3436, #636e72);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .device::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--device-color);
+        }
+
+        .device.sender { --device-color: linear-gradient(90deg, #74b9ff, #0984e3); }
+        .device.receiver { --device-color: linear-gradient(90deg, #00b894, #00cec9); }
+
+        .device h3 {
+            color: white;
+            margin-top: 0;
+            font-size: 1.5em;
+        }
+
+        .microbit {
+            background: #2c3e50;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .display {
+            background: #000;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 0 0 20px #ff6b6b;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .display.scrolling {
+            animation: scroll-text 3s linear infinite;
+        }
+
+        @keyframes scroll-text {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .arrow-up::before {
+            content: '↑';
+            font-size: 4em;
+            color: #e74c3c;
+            text-shadow: 0 0 30px #e74c3c;
+        }
+
+        .arrow-down::before {
+            content: '↓';
+            font-size: 4em;
+            color: #3498db;
+            text-shadow: 0 0 30px #3498db;
+        }
+
+        .radio-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            background: #00b894;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .radio-indicator.transmitting {
+            background: #74b9ff;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .temp-info {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #2d3436;
+        }
+
+        .temp-current {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--temp-color, #2d3436);
+        }
+
+        .temp-avg {
+            font-size: 1.5em;
+            opacity: 0.8;
+            margin: 10px 0;
+        }
+
+        .temp-status {
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: white;
+        }
+
+        .status-cold {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+        }
+
+        .status-hot {
+            background: linear-gradient(135deg, #fd79a8, #e84393);
+        }
+
+        .status-normal {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+        }
+
+        .temp-history {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .temp-chart {
+            display: flex;
+            align-items: end;
+            height: 100px;
+            gap: 3px;
+            margin: 20px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        .temp-bar {
+            flex: 1;
+            background: linear-gradient(to top, #74b9ff, #0984e3);
+            border-radius: 2px;
+            min-height: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .temp-bar:hover::after {
+            content: attr(data-temp) '°C';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3436;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            white-space: nowrap;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            margin: 0 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(116, 185, 255, 0.3);
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, #0984e3, #6c5ce7);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(116, 185, 255, 0.4);
+        }
+
+        .radio-channel {
+            background: rgba(0, 184, 148, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+            color: #00b894;
+        }
+
+        .settings-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        .setting-input {
+            width: 80px;
+            padding: 5px 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .audio-indicator {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 10px;
+            font-size: 0.8em;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .audio-indicator.playing {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .devices-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📡 micro:bit Temperatūros Monitoringas</h1>
+            <p>Belaidis temperatūros stebėjimas su radijo ryšiu ir garso signalais</p>
+        </div>
+
+        <div class="devices-container">
+            <!-- Siuntėjas -->
+            <div class="device sender">
+                <h3>📤 Siuntėjas (micro:bit #1)</h3>
+                
+                <div class="microbit">
+                    <div class="radio-indicator transmitting" title="Siunčia duomenis"></div>
+                    <div class="display" id="senderDisplay">22.5</div>
+                    <div class="audio-indicator" id="senderAudio">♪ Garsas</div>
+                </div>
+
+                <div class="temp-info">
+                    <div>Dabartinė temperatūra:</div>
+                    <div class="temp-current" id="currentTemp">22.5°C</div>
+                    <div>Vidurkis (10 matavimų):</div>
+                    <div class="temp-avg" id="avgTemp">22.3°C</div>
+                    <div class="temp-status status-normal" id="tempStatus">Normali temperatūra</div>
+                </div>
+
+                <div class="temp-history">
+                    <h4>Temperatūros istorija:</h4>
+                    <div class="temp-chart" id="tempChart"></div>
+                </div>
+            </div>
+
+            <!-- Gavėjas -->
+            <div class="device receiver">
+                <h3>📥 Gavėjas (micro:bit #2)</h3>
+                
+                <div class="microbit">
+                    <div class="radio-indicator" title="Gauna duomenis"></div>
+                    <div class="display" id="receiverDisplay">22.3</div>
+                </div>
+
+                <div class="temp-info">
+                    <div>Gauta temperatūra:</div>
+                    <div class="temp-current" id="receivedTemp">22.3°C</div>
+                    <div>Ryšio būsena:</div>
+                    <div class="temp-status status-normal" id="connectionStatus">Ryšys aktyvus</div>
+                </div>
+
+                <div class="radio-channel">
+                    📻 Radijo kanalas: 7
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-panel">
+            <h3>⚙️ Nustatymai</h3>
+            <div class="setting-item">
+                <label>Minimali temperatūra:</label>
+                <input type="number" class="setting-input" id="minTemp" value="18" onchange="updateSettings()">
+                <span>°C</span>
+            </div>
+            <div class="setting-item">
+                <label>Maksimali temperatūra:</label>
+                <input type="number" class="setting-input" id="maxTemp" value="25" onchange="updateSettings()">
+                <span>°C</span>
+            </div>
+            <div class="setting-item">
+                <label>Matavimo intervalas:</label>
+                <input type="number" class="setting-input" id="interval" value="5" onchange="updateSettings()">
+                <span>sek.</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="startSimulation()">▶️ Pradėti simuliaciją</button>
+            <button class="control-btn" onclick="stopSimulation()">⏹️ Sustabdyti</button>
+            <button class="control-btn" onclick="resetData()">🔄 Atstatyti duomenis</button>
+            <button class="control-btn" onclick="simulateExtreme()">🌡️ Ekstremalios temperatūros</button>
+        </div>
+    </div>
+
+    <script>
+        let minTemp = 18;
+        let maxTemp = 25;
+        let temperatures = [];
+        let currentTemp = 22.5;
+        let simulationInterval;
+        let extremeMode = false;
+
+        function updateTemperature() {
+            // Simuliuojame temperatūros pokyčius
+            if (extremeMode) {
+                // Ekstremali simuliacija
+                currentTemp = Math.random() < 0.5 ? 
+                    Math.random() * 10 + 5 : // Šalta: 5-15°C
+                    Math.random() * 15 + 30; // Karšta: 30-45°C
+            } else {
+                // Normali simuliacija su šiek tiek atsitiktinumo
+                currentTemp += (Math.random() - 0.5) * 2;
+                currentTemp = Math.max(15, Math.min(30, currentTemp));
+            }
+
+            currentTemp = Math.round(currentTemp * 10) / 10;
+            
+            // Pridedame į temperatūros masyvą
+            temperatures.push(currentTemp);
+            
+            if (temperatures.length > 10) {
+                temperatures.shift();
+            }
+
+            updateDisplay();
+            updateChart();
+            simulateRadioTransmission();
+        }
+
+        function updateDisplay() {
+            const avgTemp = temperatures.reduce((a, b) => a + b, 0) / temperatures.length;
+            const roundedAvg = Math.round(avgTemp * 10) / 10;
+
+            // Atnaujinimas siuntėjo
+            document.getElementById('currentTemp').textContent = currentTemp + '°C';
+            document.getElementById('avgTemp').textContent = roundedAvg + '°C';
+
+            // Ekrano ir garso atnaujinimas
+            const senderDisplay = document.getElementById('senderDisplay');
+            const senderAudio = document.getElementById('senderAudio');
+            const tempStatus = document.getElementById('tempStatus');
+
+            if (roundedAvg < minTemp) {
+                senderDisplay.innerHTML = '↓';
+                senderDisplay.className = 'display arrow-down';
+                senderAudio.textContent = '♪ POWER DOWN';
+                senderAudio.classList.add('playing');
+                tempStatus.textContent = 'Per šalta!';
+                tempStatus.className = 'temp-status status-cold';
+                
+                setTimeout(() => senderAudio.classList.remove('playing'), 1000);
+            } else if (roundedAvg > maxTemp) {
+                senderDisplay.innerHTML = '↑';
+                senderDisplay.className = 'display arrow-up';
+                senderAudio.textContent = '♪ POWER UP';
+                senderAudio.classList.add('playing');
+                tempStatus.textContent = 'Per karšta!';
+                tempStatus.className = 'temp-status status-hot';
+                
+                setTimeout(() => senderAudio.classList.remove('playing'), 1000);
+            } else {
+                senderDisplay.textContent = roundedAvg;
+                senderDisplay.className = 'display scrolling';
+                tempStatus.textContent = 'Normali temperatūra';
+                tempStatus.className = 'temp-status status-normal';
+            }
+
+            // Spalvos nustatymas pagal temperatūrą
+            const tempColor = currentTemp < minTemp ? '#3498db' : 
+                            currentTemp > maxTemp ? '#e74c3c' : '#00b894';
+            document.getElementById('currentTemp').style.setProperty('--temp-color', tempColor);
+        }
+
+        function simulateRadioTransmission() {
+            const avgTemp = temperatures.reduce((a, b) => a + b, 0) / temperatures.length;
+            const roundedAvg = Math.round(avgTemp * 10) / 10;
+
+            // Simuliuojame radijo perdavimą su mažu vėlavimu
+            setTimeout(() => {
+                document.getElementById('receiverDisplay').textContent = roundedAvg;
+                document.getElementById('receivedTemp').textContent = roundedAvg + '°C';
+                
+                // Atnaujinai gavėjo būseną
+                const connectionStatus = document.getElementById('connectionStatus');
+                connectionStatus.textContent = 'Duomenys gauti: ' + new Date().toLocaleTimeString();
+                connectionStatus.className = 'temp-status status-normal';
+            }, 200);
+        }
+
+        function updateChart() {
+            const chart = document.getElementById('tempChart');
+            chart.innerHTML = '';
+
+            const maxTempInArray = Math.max(...temperatures, maxTemp + 5);
+            const minTempInArray = Math.min(...temperatures, minTemp - 5);
+            const tempRange = maxTempInArray - minTempInArray;
+
+            temperatures.forEach(temp => {
+                const bar = document.createElement('div');
+                bar.className = 'temp-bar';
+                const height = ((temp - minTempInArray) / tempRange) * 100;
+                bar.style.height = height + '%';
+                bar.setAttribute('data-temp', temp);
+                
+                // Spalva pagal temperatūrą
+                if (temp < minTemp) {
+                    bar.style.background = 'linear-gradient(to top, #74b9ff, #0984e3)';
+                } else if (temp > maxTemp) {
+                    bar.style.background = 'linear-gradient(to top, #fd79a8, #e84393)';
+                } else {
+                    bar.style.background = 'linear-gradient(to top, #00b894, #00cec9)';
+                }
+                
+                chart.appendChild(bar);
+            });
+        }
+
+        function updateSettings() {
+            minTemp = parseInt(document.getElementById('minTemp').value);
+            maxTemp = parseInt(document.getElementById('maxTemp').value);
+            const interval = parseInt(document.getElementById('interval').value) * 1000;
+
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = setInterval(updateTemperature, interval);
+            }
+        }
+
+        function startSimulation() {
+            stopSimulation();
+            extremeMode = false;
+            const interval = parseInt(document.getElementById('interval').value) * 1000;
+            simulationInterval = setInterval(updateTemperature, interval);
+        }
+
+        function stopSimulation() {
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+            }
+        }
+
+        function resetData() {
+            temperatures = [];
+            currentTemp = 22.5;
+            extremeMode = false;
+            updateDisplay();
+            updateChart();
+        }
+
+        function simulateExtreme() {
+            stopSimulation();
+            extremeMode = true;
+            const interval = parseInt(document.getElementById('interval').value) * 1000;
+            simulationInterval = setInterval(updateTemperature, interval);
+        }
+
+        // Pradinis paleidimas
+        temperatures = [22.1, 22.3, 22.0, 22.5, 22.2, 22.4, 22.3, 22.1, 22.6, 22.3];
+        updateDisplay();
+        updateChart();
+    </script>
+</body>
+</html>
